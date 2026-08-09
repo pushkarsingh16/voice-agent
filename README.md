@@ -1,75 +1,72 @@
-# Rime Voice Demo — AI4 Booth Edition (LiveKit)
+# AI/ML Interviewer 🎙️
 
-The official Rime voice demo for the AI4 conference in Las Vegas. Booth visitors pick an industry, pick a voice, and have a live spoken conversation with a Rime-voiced AI character. Rebuilt on **LiveKit Agents** for real turn-taking and barge-in.
+An interactive, voice-powered AI technical interviewer specializing in Machine Learning, Deep Learning, and MLOps. This agent conducts realistic mock interviews, rotating through technical topics and providing a final rated summary of your performance.
 
-**Live:** https://rime-ai4-booth.vercel.app  (custom domain https://ai4.rime.ai pending a DNS record)
+## 🚀 Tech Stack
 
-## Architecture
+* **WebRTC & Real-time Audio:** [LiveKit](https://livekit.io/)
+* **LLM (The Brain):** [Groq](https://groq.com/) running **Llama 3.3 70B** (`llama-3.3-70b-versatile`) for ultra-low latency conversational responses.
+* **Text-to-Speech (The Voice):** [Rime](https://rime.ai/) for high-quality, ultra-realistic voice synthesis.
+* **Speech-to-Text (The Ears):** Deepgram Nova-3 (via LiveKit Inference).
+* **Frontend:** HTML/CSS/JS with a glassmorphic dark UI, running on Vercel.
+* **Backend:** Python (`livekit-agents` SDK) running locally.
 
-Two parts:
+## 🛠️ Setup Instructions
 
+### 1. API Keys
+You will need API keys for three services:
+1. **LiveKit Cloud**: Create a free project at [cloud.livekit.io](https://cloud.livekit.io).
+2. **Groq**: Create a free API key at [console.groq.com](https://console.groq.com).
+3. **Rime**: Create a free tier API key at [rime.ai](https://rime.ai).
+
+### 2. Environment Variables
+Create a `.env` file in the root directory **AND** in the `agent` directory.
+
+**Root `.env`**:
+```env
+LIVEKIT_URL=wss://<your-project>.livekit.cloud
+LIVEKIT_API_KEY=<your-api-key>
+LIVEKIT_API_SECRET=<your-api-secret>
 ```
-Visitor browser ──► token server (/api/token) ──► LiveKit room
-      │                                                 ▲
-      └──────────── LiveKit JS client ─────────────────┘
-                                                        │
-                              LiveKit Agent (agent/) ───┘
-                        Deepgram STT (Inference) ─► Claude Haiku 4.5 ─► Rime Coda TTS
+
+**`agent/.env`**:
+```env
+LIVEKIT_URL=wss://<your-project>.livekit.cloud
+LIVEKIT_API_KEY=<your-api-key>
+LIVEKIT_API_SECRET=<your-api-secret>
+GROQ_API_KEY=<your-groq-api-key>
+RIME_API_KEY=<your-rime-api-key>
 ```
 
-- **`agent/`** — the LiveKit voice agent (Python). STT via LiveKit Inference (`deepgram/nova-3`, keyless), LLM = Claude Haiku 4.5, TTS = Rime **Coda** with per-voice `time_scale_factor`, plus LiveKit turn detection and BVC noise cancellation. The portable heart carries over verbatim from the browser version: `VOICE_RULES`, `CHARACTERS`, the four `INDUSTRIES` personas, per-voice greetings and `VOICE_SPEED` (`personas.py`), and the `ttsPronounce()` transforms (`pronounce.py`), run in front of the TTS.
-- **root** — the booth frontend (the same brand UI) plus a Vercel serverless token function (`api/token.js`). `POST /api/token` mints a visitor join token and declares a `booth-agent` dispatch carrying the chosen `{industry, voice}` as metadata; the agent reads it and loads the matching persona, voice, speed, and greeting.
+### 3. Run the Application
 
-LiveKit turn detection replaces the old browser push-to-talk and barge-in; that browser-specific code is gone.
+You will need **two separate terminals** running side-by-side.
 
-## Run locally
-
-**1. Agent** (needs LiveKit + Anthropic + Rime keys):
-
+**Terminal 1 (Frontend):**
 ```bash
-cd agent
-pip install uv
-uv sync
-cp .env.example .env      # fill in LIVEKIT_*, ANTHROPIC_API_KEY, RIME_API_KEY
-uv run agent.py dev
-```
-
-**2. Frontend + token function** (needs LiveKit keys only):
-
-```bash
+# In the root folder
 npm install
-cp .env.example .env       # fill in LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET
-npx vercel dev             # http://localhost:3000 (emulates the Vercel build)
+npx vercel dev
 ```
 
-Open http://localhost:3000 in Chrome, pick an industry and voice, and talk.
+**Terminal 2 (Python Backend):**
+```bash
+# In the agent folder
+cd agent
+uv sync
+uv run python agent.py dev
+```
 
-## Voice casting
+### 4. Start the Interview
+1. Open `http://localhost:3000` in your browser.
+2. The UI defaults to **Mid-Level** difficulty.
+3. Click **Start Interview**, allow microphone access, and you can begin! 
 
-The picker shows official Rime voice names; in the conversation each voice plays a named person (greeting, transcript label, and LLM persona all follow the character).
+## 🎤 Interview Difficulties
 
-| Industry | Company | Rime voice → Character | Notes |
-| --- | --- | --- | --- |
-| Healthcare | Lakeside Family Health | **Arcade → Frank** (recommended), Luna → Lindsey | Luna runs at 1.1x slower (`time_scale_factor`) |
-| Finance | Meridian Trust Bank | **Clara** (recommended), Marlu → Kevin | Professional register (overrides casual rules) |
-| Food Ordering | Blaze Burger | **Vespera → Megan** (recommended), Vayu → Jake | Vespera at 1.05x slower; highest energy persona |
-| Retail | Harbor & Pine | **Wawona → Katie** (recommended), Cupola → Jordan | |
+The agent supports three difficulty tiers with different topic focuses:
+- **Junior:** Bias-variance tradeoff, gradient descent, basic architectures.
+- **Mid-Level:** Transformers, regularization techniques, experiment tracking.
+- **Senior:** System design, scaling ML pipelines, research discussions.
 
-## Pronunciation design (carried over)
-
-- Replies synthesize with full context; per-sentence fragments mispronounce. The LLM prompt embeds Rime's dialogue text style guide (`VOICE_RULES`).
-- `ttsPronounce()` (`agent/pronounce.py`) runs in front of the TTS: **"Rime" → "Rhyme"**, **"AI4" → "A. I. Four"**, stretched-spelling and stacked-punctuation normalization, stray-asterisk strip, em-dash backstop.
-- Expressive tokens like `<laugh>` reach Rime raw but are stripped from the visible transcript (`display_text`).
-
-## Deploy
-
-- **Agent** → LiveKit Cloud Agents: from `agent/`, `lk agent create --region us-east --secrets-file .env` (first time), then `lk agent deploy` to update.
-- **Frontend** → Vercel (Rime-web team): `vercel --prod`. Turn Deployment Protection off for public booth access.
-
-Use a Rime API key that is stable for the whole event.
-
-## Booth tips
-
-- Allow the mic once per origin in Chrome before the event.
-- Voice or industry changes start a fresh call by design; every visitor gets a clean scripted greeting.
-- API keys live only in `.env` (gitignored). Share via a password manager, never in chat or commits.
+*(Built by modifying the original Rime Voice Agent booth demo.)*
