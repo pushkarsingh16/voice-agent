@@ -1,0 +1,14 @@
+.env
+.env.local
+node_modules
+.DS_Store
+*.log
+
+# Python agent
+agent/.env
+agent/.env.local
+agent/.venv
+agent/__pycache__
+**/__pycache__
+*.pyc
+.vercel

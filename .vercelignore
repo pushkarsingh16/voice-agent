@@ -1,0 +1,5 @@
+# The Python LiveKit agent deploys separately to LiveKit Cloud, not Vercel.
+agent/
+node_modules/
+*.log
+.env

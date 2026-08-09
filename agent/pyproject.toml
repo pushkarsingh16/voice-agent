@@ -1,0 +1,12 @@
+[project]
+name = "aiml-interviewer"
+version = "1.0.0"
+description = "AI/ML technical interviewer voice agent (LiveKit + Rime + Claude)"
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    # STT via LiveKit Inference (keyless) is in agents core; extras add the
+    # Anthropic LLM, Rime Coda TTS, Silero VAD, and turn detection.
+    "livekit-agents[openai,rime,silero,turn-detector]~=1.6",
+    "livekit-plugins-noise-cancellation~=0.2",
+    "python-dotenv>=1.1.1",
+]

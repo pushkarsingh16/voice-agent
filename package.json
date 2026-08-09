@@ -1,0 +1,15 @@
+{
+  "name": "aiml-interviewer",
+  "version": "1.0.0",
+  "description": "AI/ML technical interviewer frontend + token function (Vercel)",
+  "type": "module",
+  "scripts": {
+    "start": "node api/token.js"
+  },
+  "dependencies": {
+    "livekit-server-sdk": "^2.9.0"
+  },
+  "devDependencies": {
+    "vercel": "^58.9.0"
+  }
+}
